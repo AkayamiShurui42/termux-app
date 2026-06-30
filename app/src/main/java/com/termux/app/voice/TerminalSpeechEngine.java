@@ -61,6 +61,7 @@ public class TerminalSpeechEngine {
         });
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     public void startListening() {
         speechRecognizer.startListening(speechIntent);
     }
