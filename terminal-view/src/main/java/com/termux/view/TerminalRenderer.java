@@ -41,15 +41,15 @@ public final class TerminalRenderer {
         mTextPaint.setAntiAlias(true);
         mTextPaint.setTextSize(textSize);
 
-        mFontLineSpacing = (int) Math.ceil(mTextPaint.getFontSpacing());
+        mFontLineSpacing = (int) (Math.ceil(mTextPaint.getFontSpacing()) * 2.00);
         mFontAscent = (int) Math.ceil(mTextPaint.ascent());
         mFontLineSpacingAndAscent = mFontLineSpacing + mFontAscent;
-        mFontWidth = mTextPaint.measureText("X");
+        mFontWidth = (float) (mTextPaint.measureText("X") * 1.15);
 
         StringBuilder sb = new StringBuilder(" ");
         for (int i = 0; i < asciiMeasures.length; i++) {
             sb.setCharAt(0, (char) i);
-            asciiMeasures[i] = mTextPaint.measureText(sb, 0, 1);
+            asciiMeasures[i] = (float) (mTextPaint.measureText(sb, 0, 1) * 1.15);
         }
     }
 

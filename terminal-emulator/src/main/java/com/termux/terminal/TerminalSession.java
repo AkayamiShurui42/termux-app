@@ -249,10 +249,31 @@ public final class TerminalSession extends TerminalOutput {
             mShellExitStatus = exitStatus;
         }
 
+        if (exitStatus != 0 && mEmulator != null) {
+            String errorDisplay = "\r\n\033[31m┌────────────────────────────────────────────────────────┐\r\n" +
+                                  "│ LOCATION: [Parsed File Name & Row Target Coordinate]   │\r\n" +
+                                  "│ ERROR TYPE: [Categorized Visual Syntax Breakdown]      │\r\n" +
+                                  "│ ACTIONABLE REMEDY: [Simplified, explicit fix step]     │\r\n" +
+                                  "└────────────────────────────────────────────────────────┘\033[0m\r\n";
+            byte[] errorBytes = errorDisplay.getBytes();
+            mEmulator.append(errorBytes, errorBytes.length);
+        }
+
         // Stop the reader and writer threads, and close the I/O streams
         mTerminalToProcessIOQueue.close();
         mProcessToTerminalIOQueue.close();
         JNI.close(mTerminalFileDescriptor);
+    }
+
+    public String harvestEnvironmentState(String rawInput, String stderr) {
+        String cwd = getCwd();
+        String history = mEmulator != null ? mEmulator.getScreen().getTranscriptText() : "";
+        if (history == null) history = "";
+        history = history.substring(Math.max(0, history.length() - 500)).replace("\"", "\\\"").replace("\n", "\\n");
+        return "{\n\"terminal_history\": \"" + history + "\",\n" +
+               "\"working_directory\": \"" + cwd + "\",\n" +
+               "\"captured_stderr\": \"" + (stderr != null ? stderr.replace("\"", "\\\"").replace("\n", "\\n") : "") + "\",\n" +
+               "\"raw_input_stream\": \"" + (rawInput != null ? rawInput.replace("\"", "\\\"").replace("\n", "\\n") : "") + "\"\n}";
     }
 
     @Override

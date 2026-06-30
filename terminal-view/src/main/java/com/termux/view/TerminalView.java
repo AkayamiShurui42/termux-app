@@ -63,6 +63,7 @@ public final class TerminalView extends View {
     private TerminalCursorBlinkerRunnable mTerminalCursorBlinkerRunnable;
     private int mTerminalCursorBlinkerRate;
     private boolean mCursorInvisibleIgnoreOnce;
+    public SuggestionOverlayView mSuggestionOverlayView;
     public static final int TERMINAL_CURSOR_BLINK_RATE_MIN = 100;
     public static final int TERMINAL_CURSOR_BLINK_RATE_MAX = 2000;
 
@@ -769,6 +770,24 @@ public final class TerminalView extends View {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (TERMINAL_VIEW_KEY_LOGGING_ENABLED)
             mClient.logInfo(LOG_TAG, "onKeyDown(keyCode=" + keyCode + ", isSystem()=" + event.isSystem() + ", event=" + event + ")");
+        
+        if (mSuggestionOverlayView != null && mSuggestionOverlayView.isShowing()) {
+            if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                mSuggestionOverlayView.moveSelection(1);
+                return true;
+            } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                mSuggestionOverlayView.moveSelection(-1);
+                return true;
+            } else if (keyCode == KeyEvent.KEYCODE_TAB) {
+                mSuggestionOverlayView.moveSelection(1);
+                return true;
+            } else if (keyCode == KeyEvent.KEYCODE_ENTER) {
+                mSuggestionOverlayView.selectCurrent();
+                mSuggestionOverlayView.dismiss();
+                return true;
+            }
+        }
+
         if (mEmulator == null) return true;
         if (isSelectingText()) {
             stopTextSelectionMode();
@@ -1005,11 +1024,20 @@ public final class TerminalView extends View {
         }
     }
 
-    @Override
     protected void onDraw(Canvas canvas) {
         if (mEmulator == null) {
             canvas.drawColor(0XFF000000);
         } else {
+            // Injected directly into the terminal canvas rendering pass
+            int cursorRowOnScreen = mEmulator.getCursorRow() - mTopRow;
+            int activeRowTop = Math.round(cursorRowOnScreen * mRenderer.mFontLineSpacing);
+            int activeRowBottom = Math.round((cursorRowOnScreen + 1) * mRenderer.mFontLineSpacing);
+
+            android.graphics.Paint anchorPaint = new android.graphics.Paint();
+            anchorPaint.setColor(android.graphics.Color.parseColor("#586e75"));
+            anchorPaint.setAlpha(51); // 20% Opacity allocation
+            canvas.drawRect(0, activeRowTop, getWidth(), activeRowBottom, anchorPaint);
+
             // render the terminal view and highlight any selected text
             int[] sel = mDefaultSelectors;
             if (mTextSelectionCursorController != null) {
